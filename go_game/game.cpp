@@ -1,6 +1,5 @@
 #include<stdio.h>
 #include"conio2.h"
-#include<iostream>
 
 #define SIZE 19
 #define BOARD_POSITION_X 100	
@@ -60,7 +59,7 @@ void draw_board(int board[][SIZE], int pos_x, int pos_y) {
 	textcolor(15);
 	textbackground(0);
 }
-void draw_menu() {
+void draw_menu(game_t* game, int pos_x, int pos_y) {
 	gotoxy(MENU_POSITION_X, MENU_POSITION_Y);
 	char tab[10][100] = { "Szymon Liszewski 193477",
 	"arrows: moving the cursor over the board",
@@ -78,6 +77,13 @@ void draw_menu() {
 		gotoxy(MENU_POSITION_X, MENU_POSITION_Y + i);
 		cputs(tab[i]);
 	}
+	char buffer[100], buffer2[100];
+	snprintf(buffer, 100, "white: %d black: %d", game->score[WHITE], game->score[BLACK]);
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y+10);
+	cputs(buffer);
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 11);
+	snprintf(buffer2, 100, "current position: %d %d ", pos_x-BOARD_POSITION_X, pos_y-BOARD_POSITION_Y);
+	cputs(buffer2);
 }
 
 void new_game(game_t* game) {
@@ -154,8 +160,14 @@ void check_captures(game_t* game, int pos_x, int pos_y) {
 		for (int i = 0; i < SIZE; i++) {
 			for (int j = 0; j < SIZE; j++) {
 				if (game->chain[j][i] == 1) {
-					if (game->on_move == WHITE) game->board[j][i] = KO_BLACK;
-					else if (game->on_move == BLACK) game->board[j][i] = KO_WHITE;
+					if (game->on_move == WHITE) {
+						game->board[j][i] = KO_BLACK;
+						game->score[WHITE] += 1;
+					}
+					else if (game->on_move == BLACK) {
+						game->board[j][i] = KO_WHITE;
+						game->score[BLACK] += 1;
+					}
 					game->chain[j][i] = EMPTY;
 				}
 			}
@@ -371,9 +383,8 @@ void move(char key, int* pos_x, int* pos_y, game_t* game) {
 void round(game_t* game, int* pos_x, int* pos_y, int* key) {
 
 	clrscr();
-	draw_menu();
+	draw_menu(game, *pos_x, *pos_y);
 	draw_board(game->board, BOARD_POSITION_X, BOARD_POSITION_Y);
-	printf("%d %d", game->score[WHITE], game->score[BLACK]);             //!!!!!!
 	gotoxy(*pos_x, *pos_y);
 	*key = getch();
 	move(*key, pos_x, pos_y, game);
@@ -387,7 +398,7 @@ int main() {
 	settitle("First name, Last Name, Student number");
 
 	int pos_x = BOARD_POSITION_X + 2, pos_y = BOARD_POSITION_Y + 2, key = 0;
-	struct game_t game = { {EMPTY},{EMPTY}, WHITE, {0,0} };
+	struct game_t game = { {EMPTY},{EMPTY}, WHITE, {9,9} };
 
 	do {
 		round(&game, &pos_x, &pos_y, &key);
