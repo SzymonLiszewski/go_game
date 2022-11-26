@@ -143,16 +143,16 @@ void find_chain(game_t* game, int pos_x, int pos_y, int color) {
 int liberties_new(game_t* game, int pos_x, int pos_y) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	int liberties = 0;
-	if (game->board[x + 1][y] == EMPTY && x != SIZE - 1) {
+	if ((game->board[x + 1][y] == EMPTY && x != SIZE - 1) || game->board[x + 1][y] == KO_BLACK || game->board[x + 1][y] == KO_WHITE) {
 		liberties += 1;
 	}
-	if (game->board[x - 1][y] == EMPTY && x != 0) {
+	if ((game->board[x - 1][y] == EMPTY && x != 0) || game->board[x - 1][y] == KO_BLACK || game->board[x - 1][y] == KO_WHITE) {
 		liberties += 1;
 	}
-	if (game->board[x][y + 1] == EMPTY && y != SIZE - 1) {
+	if ((game->board[x][y + 1] == EMPTY && y != SIZE - 1) || game->board[x][y + 1] == KO_BLACK || game->board[x][y + 1] == KO_WHITE) {
 		liberties += 1;
 	}
-	if (game->board[x][y - 1] == EMPTY && y != 0) {
+	if ((game->board[x][y - 1] == EMPTY && y != 0) || game->board[x][y - 1] == KO_BLACK || game->board[x][y - 1] == KO_WHITE) {
 		liberties += 1;
 	}
 	return liberties;
@@ -174,7 +174,8 @@ void check_captures(game_t* game, int pos_x, int pos_y) {
 		for (int i = 0; i < SIZE; i++) {
 			for (int j = 0; j < SIZE; j++) {
 				if (game->chain[j][i] == 1) {
-					game->board[j][i] = EMPTY;
+					if (game->on_move == WHITE) game->board[j][i] = KO_BLACK;
+					else if (game->on_move == BLACK) game->board[j][i] = KO_WHITE;
 					game->chain[j][i] = EMPTY;
 				}
 			}
@@ -217,7 +218,7 @@ int can_place(game_t* game, int pos_x, int pos_y) {             //checking if th
 		return 0;
 	}
 	game->board[x][y] = game->on_move;
-	//check_captures(game, pos_x, pos_y);
+	capture(game, pos_x, pos_y);
 	lib = liberties_new(game, pos_x, pos_y);
 	game->board[x][y] = color;
 	return lib;
