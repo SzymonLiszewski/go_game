@@ -1,6 +1,8 @@
 #include<stdio.h>
-#include"conio2.h"
-#include<iostream>
+#include"conio2.h"          //test
+#include<iostream>								//xddddd
+
+#define loll 5
 
 #define SIZE 19
 #define BOARD_POSITION_X 100	
