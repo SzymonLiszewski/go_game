@@ -218,7 +218,7 @@ int can_place(game_t* game, int pos_x, int pos_y) {             //checking if th
 	}
 	game->board[x][y] = game->on_move;
 	//check_captures(game, pos_x, pos_y);
-	lib = liberties(game, pos_x, pos_y);
+	lib = liberties_new(game, pos_x, pos_y);
 	game->board[x][y] = color;
 	return lib;
 }
