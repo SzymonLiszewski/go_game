@@ -80,26 +80,6 @@ void draw_menu() {
 	}
 }
 
-int liberties(game_t* game, int pos_x, int pos_y) {
-	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color = EMPTY;
-	int lib = 0;
-	if (game->board[x][y] == WHITE) color = BLACK;
-	else if (game->board[x][y] == BLACK) color = WHITE;
-	if (game->board[x + 1][y] != color && x != SIZE - 1) {
-		lib += 1;
-	}
-	if (game->board[x - 1][y] != color && x != 0) {
-		lib += 1;
-	}
-	if (game->board[x][y + 1] != color && y != SIZE - 1) {
-		lib += 1;
-	}
-	if (game->board[x][y - 1] != color && y != 0) {
-		lib += 1;
-	}
-	return lib;
-}
-
 void new_game(game_t* game) {
 	for (int i = 0; i < SIZE; i++) {
 		for (int j = 0; j < SIZE; j++) {
@@ -195,15 +175,6 @@ void capture(game_t* game, int pos_x, int pos_y) {
 	find_chain(game, pos_x + 1, pos_y, color);
 	check_captures(game, pos_x, pos_y);
 	find_chain(game, pos_x - 1, pos_y, color);
-	FILE* f;														//delete
-	f = fopen("chain.txt", "w");
-	for (int i = 0; i < SIZE; i++) {
-		for (int j = 0; j < SIZE; j++) {
-			fprintf(f, "%d ", game->chain[j][i]);
-		}
-		fprintf(f, "\n");
-	}
-	fclose(f);
 	check_captures(game, pos_x, pos_y);
 	find_chain(game, pos_x, pos_y + 1, color);
 	check_captures(game, pos_x, pos_y);
