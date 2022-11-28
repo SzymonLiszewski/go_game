@@ -2,7 +2,7 @@
 #include"conio2.h"
 
 #define SIZE 19
-#define BOARD_POSITION_X 100	
+#define BOARD_POSITION_X 50
 #define BOARD_POSITION_Y 5
 #define MENU_POSITION_X 5
 #define MENU_POSITION_Y 5
@@ -29,7 +29,7 @@ struct game_t {
 
 void draw_board(int board[][SIZE], int pos_x, int pos_y) {
 	textcolor(0);
-	textbackground(GREEN);
+	textbackground(BROWN);
 
 	for (int i = 0; i < SIZE; i++) {
 		gotoxy(BOARD_POSITION_X, BOARD_POSITION_Y + i);
@@ -59,7 +59,7 @@ void draw_board(int board[][SIZE], int pos_x, int pos_y) {
 	textcolor(15);
 	textbackground(0);
 }
-void draw_menu(game_t* game, int pos_x, int pos_y) {
+void draw_menu(struct game_t* game, int pos_x, int pos_y) {
 	gotoxy(MENU_POSITION_X, MENU_POSITION_Y);
 	char tab[10][100] = { "Szymon Liszewski 193477",
 	"arrows: moving the cursor over the board",
@@ -86,17 +86,17 @@ void draw_menu(game_t* game, int pos_x, int pos_y) {
 	cputs(buffer2);
 }
 
-void new_game(game_t* game) {
+void new_game(struct game_t* game) {
 	for (int i = 0; i < SIZE; i++) {
 		for (int j = 0; j < SIZE; j++) {
 			game->board[i][j] = EMPTY;
 		}
 	}
-	game->on_move = WHITE;
+	game->on_move = BLACK;
 	game->score[WHITE] = 0;
 	game->score[BLACK] = 0;
 }
-void find_chain(game_t* game, int pos_x, int pos_y, int color) {
+void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	if (game->board[x][y] != EMPTY && game->board[x][y] == color) {
 		game->chain[x][y] = 1;
@@ -126,7 +126,7 @@ void find_chain(game_t* game, int pos_x, int pos_y, int color) {
 		}
 	}
 }
-int liberties_new(game_t* game, int pos_x, int pos_y) {
+int liberties_new(struct game_t* game, int pos_x, int pos_y) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	int liberties = 0;
 	if ((game->board[x + 1][y] == EMPTY && x != SIZE - 1) || game->board[x + 1][y] == KO_BLACK || game->board[x + 1][y] == KO_WHITE) {
@@ -143,7 +143,7 @@ int liberties_new(game_t* game, int pos_x, int pos_y) {
 	}
 	return liberties;
 }
-int chain_liberties(game_t* game) {
+int chain_liberties(struct game_t* game) {
 	int liberties = 0;
 	for (int i = 0; i < SIZE; i++) {
 		for (int j = 0; j < SIZE; j++) {
@@ -155,7 +155,7 @@ int chain_liberties(game_t* game) {
 	return liberties;
 }
 
-void check_captures(game_t* game, int pos_x, int pos_y) {
+void check_captures(struct game_t* game, int pos_x, int pos_y) {
 	if (chain_liberties(game) == 0) {
 		for (int i = 0; i < SIZE; i++) {
 			for (int j = 0; j < SIZE; j++) {
@@ -179,7 +179,7 @@ void check_captures(game_t* game, int pos_x, int pos_y) {
 		}
 	}
 }
-void capture(game_t* game, int pos_x, int pos_y) {
+void capture(struct game_t* game, int pos_x, int pos_y) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color;
 	if (game->board[x][y] == WHITE) color = BLACK;
 	else if (game->board[x][y] == BLACK) color = WHITE;
@@ -194,7 +194,7 @@ void capture(game_t* game, int pos_x, int pos_y) {
 	check_captures(game, pos_x, pos_y);
 }
 
-int can_place(game_t* game, int pos_x, int pos_y) {             //checking if the stone can be placed (need at least one liberty after placement, checking for ko first, then checking for captures)
+int can_place(struct game_t* game, int pos_x, int pos_y) {             //checking if the stone can be placed (need at least one liberty after placement, checking for ko first, then checking for captures)
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color = game->board[x][y];
 	int lib = 0;
 	if ((game->on_move == WHITE && game->board[x][y] == KO_WHITE) || (game->on_move == BLACK && game->board[x][y] == KO_BLACK)) {
@@ -207,7 +207,7 @@ int can_place(game_t* game, int pos_x, int pos_y) {             //checking if th
 	return lib;
 }
 
-void change_ko(game_t* game) {
+void change_ko(struct game_t* game) {
 	if (game->on_move == WHITE) {
 		for (int i = 0; i < SIZE; i++) {
 			for (int j = 0; j < SIZE; j++) {
@@ -228,8 +228,8 @@ void change_ko(game_t* game) {
 	}
 }
 
-int placement(game_t* game, int pos_x, int pos_y) {
-	game_t previous_state = *game;
+int placement(struct game_t* game, int pos_x, int pos_y) {
+	struct game_t previous_state = *game;
 	if (can_place(game, pos_x, pos_y) != 0) {
 		if (game->on_move == WHITE && game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] == EMPTY) {
 			game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] = WHITE;
@@ -275,7 +275,7 @@ int placement(game_t* game, int pos_x, int pos_y) {
 	}
 }
 
-void save(game_t* game) {
+void save(struct game_t* game) {
 	FILE* f;
 	char name[100] = { 0 }, buffer[100] = { 0 };
 	int key, i = 0;
@@ -302,7 +302,7 @@ void save(game_t* game) {
 	fclose(f);
 }
 
-void load(game_t* game) {
+void load(struct game_t* game) {
 	int s;
 	FILE* f;
 	char name[100] = { 0 }, buffer[100] = { 0 };
@@ -334,26 +334,57 @@ void load(game_t* game) {
 	game->score[BLACK] = s;
 	fclose(f);
 }
-
-void move(char key, int* pos_x, int* pos_y, game_t* game) {
-	if (key == 0) {
-		key = getch();
-		if (key == ARROW_UP) {
-			(*pos_y) -= 1;
-			if (*pos_y == BOARD_POSITION_Y - 1) {
-				*pos_y = BOARD_POSITION_Y + SIZE - 1;
-			}
+void arrows(char *key, int* pos_x, int* pos_y, struct game_t* game) {
+	*key = getch();
+	if (*key == ARROW_UP) {
+		(*pos_y) -= 1;
+		if (*pos_y == BOARD_POSITION_Y - 1) {
+			*pos_y = BOARD_POSITION_Y + SIZE - 1;
 		}
-		else if (key == ARROW_DOWN) (*pos_y) = (*pos_y + 1 - BOARD_POSITION_Y) % (SIZE)+BOARD_POSITION_Y;
-		else if (key == ARROW_LEFT) {
-			(*pos_x) -= 1;
-			if (*pos_x == BOARD_POSITION_X - 1) {
-				*pos_x = BOARD_POSITION_X + SIZE - 1;
-			}
-		}
-		else if (key == ARROW_RIGHT) (*pos_x) = (*pos_x + 1 - BOARD_POSITION_X) % (SIZE)+BOARD_POSITION_X;
 	}
-	else if (key == 'i') {
+	else if (*key == ARROW_DOWN) (*pos_y) = (*pos_y + 1 - BOARD_POSITION_Y) % (SIZE)+BOARD_POSITION_Y;
+	else if (*key == ARROW_LEFT) {
+		(*pos_x) -= 1;
+		if (*pos_x == BOARD_POSITION_X - 1) {
+			*pos_x = BOARD_POSITION_X + SIZE - 1;
+		}
+	}
+	else if (*key == ARROW_RIGHT) (*pos_x) = (*pos_x + 1 - BOARD_POSITION_X) % (SIZE)+BOARD_POSITION_X;
+}
+
+void game_state_editor(struct game_t *game, char *key, int* pos_x, int* pos_y){
+	clrscr();
+	draw_board(game->board, BOARD_POSITION_X, BOARD_POSITION_Y);
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y);
+	cputs("arrows: move");
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y+1);
+	cputs("i: put/delete stone");
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y+2);
+	cputs("enter: confirm and start game");
+	gotoxy(*pos_x, *pos_y);
+	//key = getch();
+	while (*key != ENTER) {
+		//key = getch();
+		arrows(key, pos_x, pos_y, game);
+		gotoxy(*pos_x, *pos_y);
+		if (*key == 'i') {
+			if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
+				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK;
+			}
+			else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
+				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = EMPTY;
+			}
+			draw_board(game->board, BOARD_POSITION_X, BOARD_POSITION_Y);
+		}
+	}
+	
+}
+
+void move(char *key, int* pos_x, int* pos_y, struct game_t* game) {
+	if (*key == 0) {
+		arrows(key, pos_x, pos_y, game);
+	}
+	else if (*key == 'i') {
 		if (placement(game, *pos_x, *pos_y) == 1) {
 			capture(game, *pos_x, *pos_y);
 
@@ -363,31 +394,35 @@ void move(char key, int* pos_x, int* pos_y, game_t* game) {
 			//placement(game, *pos_x, *pos_y);                 //???????
 		}*/
 	}
-	else if (key == 'n') {
+	else if (*key == 'n') {
 		new_game(game);
 	}
-	else if (key == 's') {
+	else if (*key == 's') {
 		save(game);
 	}
-	else if (key == 'l') {
+	else if (*key == 'l') {
 		load(game);
 	}
-	else if (key == ENTER) {
-		//
-	}
-	else if (key == ESC) {
-		//
+	else if (*key == 'e') {
+		int start_game = 0;
+		for (int i = 0; i < SIZE; i++) {
+			for (int j = 0; j < SIZE; j++) {
+				if (game->board[j][i] != 0)
+					start_game = 1;
+			}
+		}
+		if (start_game==0) game_state_editor(game, key, pos_x, pos_y);
 	}
 }
 
-void round(game_t* game, int* pos_x, int* pos_y, int* key) {
+void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 
 	clrscr();
 	draw_menu(game, *pos_x, *pos_y);
 	draw_board(game->board, BOARD_POSITION_X, BOARD_POSITION_Y);
 	gotoxy(*pos_x, *pos_y);
 	*key = getch();
-	move(*key, pos_x, pos_y, game);
+	move(key, pos_x, pos_y, game);
 
 }
 
@@ -397,8 +432,9 @@ int main() {
 #endif
 	settitle("First name, Last Name, Student number");
 
-	int pos_x = BOARD_POSITION_X + 2, pos_y = BOARD_POSITION_Y + 2, key = 0;
-	struct game_t game = { {EMPTY},{EMPTY}, WHITE, {9,9} };
+	int pos_x = BOARD_POSITION_X + 2, pos_y = BOARD_POSITION_Y + 2;
+	char key = 0;
+	struct game_t game = { {EMPTY},{EMPTY}, BLACK, {0,0} };
 
 	do {
 		round(&game, &pos_x, &pos_y, &key);
