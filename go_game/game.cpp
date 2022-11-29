@@ -273,6 +273,7 @@ int placement(struct game_t* game, int pos_x, int pos_y) {
 		}
 		return 1;
 	}
+	return 0;
 }
 
 void save(struct game_t* game) {
@@ -421,6 +422,26 @@ void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 	draw_menu(game, *pos_x, *pos_y);
 	draw_board(game->board, BOARD_POSITION_X, BOARD_POSITION_Y);
 	gotoxy(*pos_x, *pos_y);
+
+	if (game->board[*pos_x-BOARD_POSITION_X][*pos_y-BOARD_POSITION_Y] == WHITE) {                  //changing background color
+		textbackground(LIGHTRED);
+		textcolor(15);
+		cputs("O");
+		textbackground(0);
+	}
+	else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
+		textbackground(LIGHTRED);
+		textcolor(0);
+		cputs("O");
+		textbackground(0);
+		textcolor(15);
+	}
+	else {
+		textbackground(LIGHTRED);
+		cputs(" ");
+		textbackground(0);
+	}
+
 	*key = getch();
 	move(key, pos_x, pos_y, game);
 
@@ -431,7 +452,7 @@ int main() {
 	Conio2_Init();
 #endif
 	settitle("First name, Last Name, Student number");
-
+	_setcursortype(_NOCURSOR);
 	int pos_x = BOARD_POSITION_X + 2, pos_y = BOARD_POSITION_Y + 2;
 	char key = 0;
 	struct game_t game = { {EMPTY},{EMPTY}, BLACK, {0,0} };
