@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include"conio2.h"
 #include<stdlib.h>
+#include<math.h>
 
 #define SIZE 9
 #define BOARD_POSITION_X 50
@@ -102,7 +103,7 @@ void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	if (game->board[x][y] != EMPTY && game->board[x][y] == color) {
 		game->chain[x][y] = 1;
-		if (x != game->size - 1 && game->board[x + 1][y] == color) {
+		if (x < game->size - 1 && game->board[x + 1][y] == color) {
 			if (game->chain[x + 1][y] == 0) {
 				game->chain[x + 1][y] = 1;
 				find_chain(game, pos_x + 1, pos_y, color);
@@ -131,16 +132,16 @@ void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {
 int liberties_new(struct game_t* game, int pos_x, int pos_y) {
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	int liberties = 0;
-	if ((game->board[x + 1][y] == EMPTY && x != game->size - 1) || game->board[x + 1][y] == KO_BLACK || game->board[x + 1][y] == KO_WHITE) {
+	if ((x != game->size - 1) && (game->board[x + 1][y] == EMPTY || game->board[x + 1][y] == KO_BLACK || game->board[x + 1][y] == KO_WHITE)) {
 		liberties += 1;
 	}
-	if ((game->board[x - 1][y] == EMPTY && x != 0) || game->board[x - 1][y] == KO_BLACK || game->board[x - 1][y] == KO_WHITE) {
+	if ((x != 0) && (game->board[x - 1][y] == EMPTY || game->board[x - 1][y] == KO_BLACK || game->board[x - 1][y] == KO_WHITE)) {
 		liberties += 1;
 	}
-	if ((game->board[x][y + 1] == EMPTY && y != game->size - 1) || game->board[x][y + 1] == KO_BLACK || game->board[x][y + 1] == KO_WHITE) {
+	if ((y != game->size - 1) && (game->board[x][y + 1] == EMPTY || game->board[x][y + 1] == KO_BLACK || game->board[x][y + 1] == KO_WHITE)) {
 		liberties += 1;
 	}
-	if ((game->board[x][y - 1] == EMPTY && y != 0) || game->board[x][y - 1] == KO_BLACK || game->board[x][y - 1] == KO_WHITE) {
+	if ((y != 0) && (game->board[x][y - 1] == EMPTY || game->board[x][y - 1] == KO_BLACK || game->board[x][y - 1] == KO_WHITE)) {
 		liberties += 1;
 	}
 	return liberties;
@@ -186,14 +187,22 @@ void capture(struct game_t* game, int pos_x, int pos_y) {
 	if (game->board[x][y] == WHITE) color = BLACK;
 	else if (game->board[x][y] == BLACK) color = WHITE;
 	else color = EMPTY;
-	find_chain(game, pos_x + 1, pos_y, color);
-	check_captures(game, pos_x, pos_y);
-	find_chain(game, pos_x - 1, pos_y, color);
-	check_captures(game, pos_x, pos_y);
-	find_chain(game, pos_x, pos_y + 1, color);
-	check_captures(game, pos_x, pos_y);
-	find_chain(game, pos_x, pos_y - 1, color);
-	check_captures(game, pos_x, pos_y);
+	if (x < game->size-1) {                                       //przeniesc ify do find_chain
+		find_chain(game, pos_x + 1, pos_y, color);
+		check_captures(game, pos_x, pos_y);
+	}
+	if (x > 0) {
+		find_chain(game, pos_x - 1, pos_y, color);
+		check_captures(game, pos_x, pos_y);
+	}
+	if (y < game->size-1) {
+		find_chain(game, pos_x, pos_y + 1, color);
+		check_captures(game, pos_x, pos_y);
+	}
+	if (y > 0){
+		find_chain(game, pos_x, pos_y - 1, color);
+		check_captures(game, pos_x, pos_y);
+	}
 }
 
 int can_place(struct game_t* game, int pos_x, int pos_y) {             //checking if the stone can be placed (need at least one liberty after placement, checking for ko first, then checking for captures)
@@ -230,11 +239,11 @@ void change_ko(struct game_t* game) {
 	}
 }
 
-int placement(struct game_t* game, int pos_x, int pos_y) {
+int placement(struct game_t* game, int *pos_x, int *pos_y) {
 	struct game_t previous_state = *game;
-	if (can_place(game, pos_x, pos_y) != 0) {
-		if (game->on_move == WHITE && game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] == EMPTY) {
-			game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] = WHITE;
+	if (can_place(game, *pos_x, *pos_y) != 0) {
+		if (game->on_move == WHITE && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
+			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = WHITE;
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 			int key = getch();
 			while (key != ESC && key != ENTER) {
@@ -250,10 +259,10 @@ int placement(struct game_t* game, int pos_x, int pos_y) {
 				game->on_move = BLACK;
 				return 1;
 			}
-
 		}
-		else if (game->on_move == BLACK && game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] == EMPTY) {
-			game->board[pos_x - BOARD_POSITION_X][pos_y - BOARD_POSITION_Y] = BLACK;
+
+		else if (game->on_move == BLACK && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
+			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK;
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 			int key = getch();
 			while (key != ENTER && key != ESC) {
@@ -302,11 +311,12 @@ void save(struct game_t* game) {
 	fprintf(f, "%d ", game->on_move);
 	fprintf(f, "%d ", game->score[WHITE]);
 	fprintf(f, "%d ", game->score[BLACK]);
+	fprintf(f, "%d ", game->size);
 	fclose(f);
 }
 
 void load(struct game_t* game) {
-	int s;
+	int s, n[3];
 	FILE* f;
 	char name[100] = { 0 }, buffer[100] = { 0 };
 	int key, i = 0;
@@ -335,6 +345,12 @@ void load(struct game_t* game) {
 	game->score[WHITE] = s;
 	fscanf(f, "%d", &s);
 	game->score[BLACK] = s;
+	fscanf(f, "%s", &n);
+	s = 0;
+	for (int j = 0; j < 3; j++) {
+		s += ((int)n[3 - j - 1] - 48) * pow(10, (double)j);
+	}
+	game->size = s;
 	fclose(f);
 }
 void arrows(char *key, int* pos_x, int* pos_y, struct game_t* game) {
@@ -388,7 +404,9 @@ void move(char *key, int* pos_x, int* pos_y, struct game_t* game) {
 		arrows(key, pos_x, pos_y, game);
 	}
 	else if (*key == 'i') {
-		if (placement(game, *pos_x, *pos_y) == 1) {
+		placement(game, pos_x, pos_y);
+		/*
+		if (placement(game, pos_x, pos_y) == 1) {
 			capture(game, *pos_x, *pos_y);
 
 			//check_captures(game, *pos_x, *pos_y);
@@ -450,14 +468,58 @@ void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 
 }
 void test_func(int size, struct game_t* game) {
-	game->board[2][3] = 7;
+	game->board[2][3] = 8;
+	game->board[3][3] = 5;
 	//board[0][0] = 1;
 	for (int i = 0; i < size; i++) {
 		for (int j = 0; j < size; j++) {
 			printf("%d ", game->board[i][j]);
 		}
+		printf("\n");
 	}
 }
+
+int change_size() {
+	int key;
+	int s[100], i=0, size=0;
+	clrscr();
+	gotoxy(1, 1);
+	cputs("choose board size");
+	gotoxy(1, 2);
+	cputs("1: 9x9");
+	gotoxy(1, 3);
+	cputs("2: 13x13");
+	gotoxy(1, 4);
+	cputs("3: 19x19");
+	gotoxy(1, 5);
+	cputs("4: custom size");
+	key = getch();
+	while (key != '1' && key != '2' && key != '3' && key!='4') {
+		key = getch();
+	}
+	if (key == '1') return 9;
+	else if (key == '2') return 13;
+	else if (key == '3') return 19;
+	else if (key == '4') {
+		struct text_info info;
+		gettextinfo(&info);
+		clrscr();
+		gotoxy(1, 1);
+		cputs("enter size of the board: ");
+		while (key != ENTER) {
+			key = getche();
+			if (key != ENTER) {
+				s[i] = key;
+				i++;
+			}
+		}
+		for (int j = 0; j < i; j++) {
+			size += ((int)s[i-j-1]-48)*pow(10,(double)j);
+		}
+		return size;
+	}
+}
+
 int main() {
 #ifndef __cplusplus
 	Conio2_Init();
@@ -465,15 +527,16 @@ int main() {
 	settitle("First name, Last Name, Student number");
 	_setcursortype(_NOCURSOR);
 
-	int size=19;
-	int *ptr, **board, **chain;
+	int size=change_size();
+	int *ptr,*ptr2, **board, **chain;
 	board = (int**)malloc(sizeof(int*) * size + sizeof(int) * size * size);
 	chain = (int**)malloc(sizeof(int*) * size + sizeof(int) * size * size);
 
 	ptr = (int*)(board + size);
+	ptr2 = (int*)(chain + size);
 	for (int i = 0; i < size; i++) {
 		board[i] = (ptr + size * i);
-		chain[i] = (ptr + size * i);
+		chain[i] = (ptr2 + size * i);
 	}
 
 	int pos_x = BOARD_POSITION_X + 2, pos_y = BOARD_POSITION_Y + 2;
@@ -485,17 +548,16 @@ int main() {
 			chain[i][j] = 0;
 		}
 	}
-	board[1][1] = WHITE;
-	board[2][2] = BLACK;
-	struct game_t game = {size, board, chain, BLACK, {0,0} };
-
+	//board[1][1] = WHITE;
+	//board[2][2] = BLACK;
+	struct game_t game = {size, board, chain, BLACK, {0,0}};
+	//test_func(size, &game);
 	do {
-		//test_func(size, &game);
 		round(&game, &pos_x, &pos_y, &key);
 	} while (key != 'q');
 
-	for (int i = 0; i < size; i++) {
+	/*for (int i = 0; i < size; i++) {
 		free(board[i]);
 	}
-	free(board);
+	free(board);*/
 }
