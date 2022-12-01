@@ -327,6 +327,7 @@ void save(struct game_t* game) {
 	}
 	snprintf(buffer, sizeof(name), "%s.txt", name);
 	f = fopen(buffer, "w");
+	fprintf(f, "%d ", game->size);
 	for (int i = 0; i < game->size; i++) {
 		for (int j = 0; j < game->size; j++) {
 			fprintf(f, "%d ", game->board[i][j]);
@@ -335,12 +336,11 @@ void save(struct game_t* game) {
 	fprintf(f, "%d ", game->on_move);
 	fprintf(f, "%d ", game->score[WHITE]);
 	fprintf(f, "%d ", game->score[BLACK]);
-	fprintf(f, "%d ", game->size);
 	fclose(f);
 }
 
 void load(struct game_t* game) {
-	int s, n[3];
+	int s;
 	FILE* f;
 	char name[100] = { 0 }, buffer[100] = { 0 };
 	int key, i = 0;
@@ -356,25 +356,40 @@ void load(struct game_t* game) {
 	}
 	snprintf(buffer, sizeof(name), "%s.txt", name);
 	f = fopen(buffer, "r");
+	fscanf(f, "%d", &s);
+	game->size = s;
+	free(game->board);
+	game->board = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
+	game->chain = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
+
+	int *ptr = (int*)(game->board + game->size);
+	int *ptr2 = (int*)(game->chain + game->size);
+	
+	for (int i = 0; i < game->size; i++) {
+		game->board[i] = (ptr + game->size * i);
+		game->chain[i] = (ptr2 + game->size * i);
+	}
+
+	for (int i = 0; i < game->size; i++) {
+		for (int j = 0; j < game->size; j++) {
+			game->board[i][j] = 0;
+			game->chain[i][j] = 0;
+		}
+	}
+
 	for (int i = 0; i < game->size; i++) {
 		for (int j = 0; j < game->size; j++) {
 			fscanf(f, "%d", &s);
 			game->board[i][j] = s;
 		}
 	}
-	printf("%d", game->board[0][0]);
+	//printf("%d", game->board[0][0]);
 	fscanf(f, "%d", &s);
 	game->on_move = s;
 	fscanf(f, "%d", &s);
 	game->score[WHITE] = s;
 	fscanf(f, "%d", &s);
 	game->score[BLACK] = s;
-	fscanf(f, "%s", &n);
-	s = 0;
-	for (int j = 0; j < 3; j++) {
-		s += ((int)n[3 - j - 1] - 48) * pow(10, (double)j);
-	}
-	game->size = s;
 	fclose(f);
 }
 void arrows(char *key, int* pos_x, int* pos_y, struct game_t* game) {
@@ -582,6 +597,6 @@ int main() {
 
 	/*for (int i = 0; i < size; i++) {
 		free(board[i]);
-	}
-	free(board);*/
+	}*/
+	//free(board);
 }
