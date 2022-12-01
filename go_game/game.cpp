@@ -2,6 +2,7 @@
 #include"conio2.h"
 #include<stdlib.h>
 #include<math.h>
+#include<string.h>
 
 #define SIZE 9
 #define BOARD_POSITION_X 50
@@ -240,7 +241,20 @@ void change_ko(struct game_t* game) {
 }
 
 int placement(struct game_t* game, int *pos_x, int *pos_y) {
-	struct game_t previous_state = *game;
+	int* ptr, **previous_board;
+	previous_board = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
+
+	ptr = (int*)(previous_board + game->size);
+	for (int i = 0; i < game->size; i++) {
+		previous_board[i] = (ptr + game->size * i);
+	}
+
+	for (int i = 0; i < game->size; i++) {
+		for (int j = 0; j < game->size; j++) {
+			previous_board[i][j] = game->board[i][j];
+		}
+	}
+	int previous_score[3] = { 0,game->score[WHITE],game->score[BLACK] };
 	if (can_place(game, *pos_x, *pos_y) != 0) {
 		if (game->on_move == WHITE && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
 			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = WHITE;
@@ -250,7 +264,12 @@ int placement(struct game_t* game, int *pos_x, int *pos_y) {
 				key = getch();
 			}
 			if (key == ESC) {
-				*game = previous_state;
+				for (int i = 0; i < game->size; i++) {
+					for (int j = 0; j < game->size; j++) {
+						game->board[i][j] = previous_board[i][j];
+					}
+				}
+				game->score[WHITE] = previous_score[WHITE];
 				draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 				return 0;
 			}
@@ -274,7 +293,12 @@ int placement(struct game_t* game, int *pos_x, int *pos_y) {
 				return 1;
 			}
 			else if (key == ESC) {
-				*game = previous_state;
+				for (int i = 0; i < game->size; i++) {
+					for (int j = 0; j < game->size; j++) {
+						game->board[i][j] = previous_board[i][j];
+					}
+				}
+				game->score[BLACK] = previous_score[BLACK];
 				draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 				return 0;
 			}
