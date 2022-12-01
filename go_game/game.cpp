@@ -160,16 +160,24 @@ int chain_liberties(struct game_t* game) {
 }
 
 void check_captures(struct game_t* game, int pos_x, int pos_y) {
+	int chain_size = 0;
+	for (int i = 0; i < game->size; i++) {
+		for (int j = 0; j < game->size; j++) {
+			if (game->chain[j][i] != EMPTY) chain_size++;
+		}
+	}
 	if (chain_liberties(game) == 0) {
 		for (int i = 0; i < game->size; i++) {
 			for (int j = 0; j < game->size; j++) {
 				if (game->chain[j][i] == 1) {
 					if (game->on_move == WHITE) {
-						game->board[j][i] = KO_BLACK;
+						if (chain_size == 1) game->board[j][i] = KO_BLACK;
+						else game->board[j][i] = EMPTY;
 						game->score[WHITE] += 1;
 					}
 					else if (game->on_move == BLACK) {
-						game->board[j][i] = KO_WHITE;
+						if (chain_size == 1) game->board[j][i] = KO_WHITE;
+						else game->board[j][i] = EMPTY;
 						game->score[BLACK] += 1;
 					}
 					game->chain[j][i] = EMPTY;
@@ -214,7 +222,8 @@ int can_place(struct game_t* game, int pos_x, int pos_y) {             //checkin
 	}
 	game->board[x][y] = game->on_move;
 	capture(game, pos_x, pos_y);
-	lib = liberties_new(game, pos_x, pos_y);
+	find_chain(game, pos_x, pos_y, game->on_move);
+	lib = chain_liberties(game);
 	game->board[x][y] = color;
 	return lib;
 }
@@ -443,12 +452,10 @@ void move(char *key, int* pos_x, int* pos_y, struct game_t* game) {
 		arrows(key, pos_x, pos_y, game);
 	}
 	else if (*key == 'i') {
-		placement(game, pos_x, pos_y);
-		/*
+		//placement(game, pos_x, pos_y);
+		
 		if (placement(game, pos_x, pos_y) == 1) {
 			capture(game, *pos_x, *pos_y);
-
-			//check_captures(game, *pos_x, *pos_y);
 		}
 		/*else {
 			//placement(game, *pos_x, *pos_y);                 //???????
