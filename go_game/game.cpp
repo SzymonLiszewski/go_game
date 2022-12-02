@@ -36,6 +36,8 @@ void draw_board(struct game_t* game, int pos_x, int pos_y) {
 	textbackground(BROWN);
 
 	for (int i = 0; i < game->size; i++) {
+		struct text_info info;
+		gettextinfo(&info);
 		gotoxy(BOARD_POSITION_X, BOARD_POSITION_Y + i);
 		for (int j = 0; j < game->size; j++) {
 			if (game->board[j][i] == EMPTY || game->board[j][i] == KO_WHITE || game->board[j][i] == KO_BLACK) {
@@ -482,12 +484,20 @@ void move(char *key, int* pos_x, int* pos_y, struct game_t* game) {
 	}
 }
 
+void scrolling(int* pos_x, int* pos_y) {
+	struct text_info info;
+	gettextinfo(&info);
+	if (*pos_x > info.screenwidth) movetext(MENU_POSITION_X, MENU_POSITION_Y, info.screenwidth, info.screenheight, MENU_POSITION_X-1, MENU_POSITION_Y-1);
+	if (*pos_y > info.screenheight) movetext(MENU_POSITION_X, MENU_POSITION_Y, info.screenwidth, info.screenheight, MENU_POSITION_X-1, MENU_POSITION_Y-1);
+}
+
 void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 
 	clrscr();
 	draw_menu(game, *pos_x, *pos_y);
 	draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 	gotoxy(*pos_x, *pos_y);
+	scrolling(pos_x, pos_y);
 
 	if (game->board[*pos_x-BOARD_POSITION_X][*pos_y-BOARD_POSITION_Y] == WHITE) {                  //changing background color
 		textbackground(LIGHTRED);
@@ -561,6 +571,9 @@ int change_size() {
 		}
 		for (int j = 0; j < i; j++) {
 			size += ((int)s[i-j-1]-48)*pow(10,(double)j);
+		}
+		if (BOARD_POSITION_Y + size > info.screenheight || BOARD_POSITION_X + size > info.screenwidth) {
+			change_size();
 		}
 		return size;
 	}
