@@ -447,6 +447,51 @@ void game_state_editor(struct game_t* game, char* key, int* pos_x, int* pos_y) {
 
 }
 
+int change_size() {
+	int key;
+	int s[100], i = 0, size = 0;
+	clrscr();
+	gotoxy(1, 1);
+	cputs("choose board size");
+	gotoxy(1, 2);
+	cputs("1: 9x9");
+	gotoxy(1, 3);
+	cputs("2: 13x13");
+	gotoxy(1, 4);
+	cputs("3: 19x19");
+	gotoxy(1, 5);
+	cputs("4: custom size");
+	key = getch();
+	while (key != '1' && key != '2' && key != '3' && key != '4') {
+		key = getch();
+	}
+	if (key == '1') return 9;
+	else if (key == '2') return 13;
+	else if (key == '3') return 19;
+	else if (key == '4') {
+		struct text_info info;
+		gettextinfo(&info);
+		clrscr();
+		gotoxy(1, 1);
+		cputs("enter size of the board: ");
+		while (key != ENTER) {
+			key = getche();
+			if (key != ENTER) {
+				s[i] = key;
+				i++;
+			}
+		}
+		for (int j = 0; j < i; j++) {
+			size += ((int)s[i - j - 1] - 48) * pow(10, (double)j);
+		}
+		if (BOARD_POSITION_Y + size > info.screenheight || BOARD_POSITION_X + size > info.screenwidth) {
+			return change_size();
+		}
+	}
+	return size;
+}
+
+
 void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 	if (*key == 0) {
 		arrows(key, pos_x, pos_y, game);
@@ -463,6 +508,25 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 	}
 	else if (*key == 'n') {
 		new_game(game);
+		game->size = change_size();
+		free(game->board);
+		game->board = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
+		game->chain = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
+
+		int* ptr = (int*)(game->board + game->size);
+		int* ptr2 = (int*)(game->chain + game->size);
+
+		for (int i = 0; i < game->size; i++) {
+			game->board[i] = (ptr + game->size * i);
+			game->chain[i] = (ptr2 + game->size * i);
+		}
+
+		for (int i = 0; i < game->size; i++) {
+			for (int j = 0; j < game->size; j++) {
+				game->board[i][j] = 0;
+				game->chain[i][j] = 0;
+			}
+		}
 	}
 	else if (*key == 's') {
 		save(game);
@@ -513,58 +577,6 @@ void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 
 
 }
-void test_func(int size, struct game_t* game) {
-	game->board[2][3] = 8;
-	game->board[3][3] = 5;
-	//board[0][0] = 1;
-	for (int i = 0; i < size; i++) {
-		for (int j = 0; j < size; j++) {
-			printf("%d ", game->board[i][j]);
-		}
-		printf("\n");
-	}
-}
-
-int change_size() {
-	int key;
-	int s[100], i = 0, size = 0;
-	clrscr();
-	gotoxy(1, 1);
-	cputs("choose board size");
-	gotoxy(1, 2);
-	cputs("1: 9x9");
-	gotoxy(1, 3);
-	cputs("2: 13x13");
-	gotoxy(1, 4);
-	cputs("3: 19x19");
-	gotoxy(1, 5);
-	cputs("4: custom size");
-	key = getch();
-	while (key != '1' && key != '2' && key != '3' && key != '4') {
-		key = getch();
-	}
-	if (key == '1') return 9;
-	else if (key == '2') return 13;
-	else if (key == '3') return 19;
-	else if (key == '4') {
-		struct text_info info;
-		gettextinfo(&info);
-		clrscr();
-		gotoxy(1, 1);
-		cputs("enter size of the board: ");
-		while (key != ENTER) {
-			key = getche();
-			if (key != ENTER) {
-				s[i] = key;
-				i++;
-			}
-		}
-		for (int j = 0; j < i; j++) {
-			size += ((int)s[i - j - 1] - 48) * pow(10, (double)j);
-		}
-		return size;
-	}
-}
 
 int main() {
 #ifndef __cplusplus
@@ -594,10 +606,7 @@ int main() {
 			chain[i][j] = 0;
 		}
 	}
-	//board[1][1] = WHITE;
-	//board[2][2] = BLACK;
 	struct game_t game = { size, board, chain, BLACK, {0,0} };
-	//test_func(size, &game);
 	do {
 		round(&game, &pos_x, &pos_y, &key);
 	} while (key != 'q');
