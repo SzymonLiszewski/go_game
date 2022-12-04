@@ -500,7 +500,7 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 		//placement(game, pos_x, pos_y);
 
 		if (placement(game, pos_x, pos_y) == 1) {
-			capture(game, *pos_x, *pos_y);
+			capture(game, *pos_x, *pos_y);               //?????????????????????XDDDDDDDD
 		}
 		/*else {
 			//placement(game, *pos_x, *pos_y);                 //???????
@@ -614,5 +614,5 @@ int main() {
 	/*for (int i = 0; i < size; i++) {
 		free(board[i]);
 	}*/
-	//free(board);
+	free(board);
 }
