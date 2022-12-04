@@ -214,6 +214,7 @@ void capture(struct game_t* game, int pos_x, int pos_y) {
 	}
 }
 
+
 int can_place(struct game_t* game, int pos_x, int pos_y) {             //checking if the stone can be placed (need at least one liberty after placement, checking for ko first, then checking for captures)
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color = game->board[x][y];
 	int lib = 0;
@@ -224,6 +225,11 @@ int can_place(struct game_t* game, int pos_x, int pos_y) {             //checkin
 	capture(game, pos_x, pos_y);
 	find_chain(game, pos_x, pos_y, game->on_move);
 	lib = chain_liberties(game);
+	for (int i = 0; i < game->size; i++) {
+		for (int j = 0; j < game->size; j++) {
+			game->chain[j][i] = EMPTY;
+		}
+	}
 	game->board[x][y] = color;
 	return lib;
 }
@@ -309,14 +315,17 @@ int placement(struct game_t* game, int* pos_x, int* pos_y) {
 				}
 				game->score[BLACK] = previous_score[BLACK];
 				draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
+				free(previous_board);
 				return 0;
 			}
 		}
 		else {
 			return 0;
 		}
+		free(previous_board);
 		return 1;
 	}
+	free(previous_board);
 	return 0;
 }
 
