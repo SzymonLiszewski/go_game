@@ -612,7 +612,7 @@ int main() {
 	Conio2_Init();
 #endif
 	settitle("First name, Last Name, Student number");
-	_setcursortype(_NORMALCURSOR);
+	_setcursortype(_NOCURSOR);
 
 	int size = change_size();
 	int* ptr, * ptr2, ** board, ** chain;
