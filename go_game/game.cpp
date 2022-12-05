@@ -7,8 +7,8 @@
 #define SIZE 9
 #define BOARD_POSITION_X 50
 #define BOARD_POSITION_Y 5
-#define MENU_POSITION_X 5
-#define MENU_POSITION_Y 5
+#define MENU_POSITION_X 1
+#define MENU_POSITION_Y 1
 
 #define EMPTY 0
 #define WHITE 1
@@ -29,15 +29,21 @@ struct game_t {
 	int** chain;
 	int on_move;
 	int score[3];
+	int start_x;
+	int start_y;
 };
 
 void draw_board(struct game_t* game, int pos_x, int pos_y) {
 	textcolor(0);
 	textbackground(BROWN);
-
-	for (int i = 0; i < game->size; i++) {
-		gotoxy(BOARD_POSITION_X, BOARD_POSITION_Y + i);
-		for (int j = 0; j < game->size; j++) {
+	struct text_info info;
+	gettextinfo(&info);
+	int x = game->size, y=game->size;
+	if (game->size + BOARD_POSITION_X > info.screenwidth) x = info.screenwidth - BOARD_POSITION_X+1;
+	if (game->size + BOARD_POSITION_Y > info.screenheight) y = info.screenheight - BOARD_POSITION_Y+1;
+	for (int i = game->start_y, k=0; i < (y+game->start_y); i++,k++) {
+		gotoxy(BOARD_POSITION_X, BOARD_POSITION_Y + k);
+		for (int j = game->start_x; j < (x+game->start_x); j++) {
 			if (game->board[j][i] == EMPTY || game->board[j][i] == KO_WHITE || game->board[j][i] == KO_BLACK) {
 				if (i == 0 && j != 0 && j != game->size - 1) putch(194);
 				else if (j == 0 && i != 0 && i != game->size - 1) putch(195);
@@ -492,10 +498,10 @@ int change_size() {
 		}
 		for (int j = 0; j < i; j++) {
 			size += ((int)s[i - j - 1] - 48) * pow(10, (double)j);
-		}
+		}/*
 		if (BOARD_POSITION_Y + size > info.screenheight || BOARD_POSITION_X + size > info.screenwidth) {
 			return change_size();
-		}
+		}*/
 	}
 	return size;
 }
@@ -555,12 +561,26 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 	}
 }
 
+void scroll(struct game_t* game, int pos_x, int pos_y) {
+	struct text_info info;
+	gettextinfo(&info);
+	//movetext(1, 1, info.screenwidth, info.screenheight, -BOARD_POSITION_X, -1);
+	if (pos_x > info.screenwidth) game->start_x = pos_x - info.screenwidth;
+	else game->start_x = 0;
+	if (pos_y > info.screenheight) game->start_y = pos_y - info.screenheight;
+	else game->start_y = 0;
+}
+ 
 void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
-
+	struct text_info info;
+	gettextinfo(&info);
 	clrscr();
 	draw_menu(game, *pos_x, *pos_y);
 	draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
-	gotoxy(*pos_x, *pos_y);
+	if (*pos_x > info.screenwidth && *pos_y > info.screenheight) gotoxy(info.screenwidth, info.screenheight);
+	else if (*pos_x > info.screenwidth) gotoxy(info.screenwidth, *pos_y);
+	else if (*pos_y > info.screenheight) gotoxy(*pos_x,info.screenheight);
+	else gotoxy(*pos_x, *pos_y);
 
 	if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == WHITE) {                  //changing background color
 		textbackground(LIGHTRED);
@@ -583,7 +603,7 @@ void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 
 	*key = getch();
 	move(key, pos_x, pos_y, game);
-
+	scroll(game, *pos_x, *pos_y);
 
 }
 
@@ -592,7 +612,7 @@ int main() {
 	Conio2_Init();
 #endif
 	settitle("First name, Last Name, Student number");
-	_setcursortype(_NOCURSOR);
+	_setcursortype(_NORMALCURSOR);
 
 	int size = change_size();
 	int* ptr, * ptr2, ** board, ** chain;
@@ -615,7 +635,7 @@ int main() {
 			chain[i][j] = 0;
 		}
 	}
-	struct game_t game = { size, board, chain, BLACK, {0,0} };
+	struct game_t game = { size, board, chain, BLACK, {0,0}, 0,0 };
 	do {
 		round(&game, &pos_x, &pos_y, &key);
 	} while (key != 'q');
