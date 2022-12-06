@@ -29,7 +29,7 @@ struct game_t {
 	int** chain;
 	int on_move;
 	int score[3];
-	int start_x;
+	int start_x;           //if board is too big displaying from start_x,start_y instead of 0,0
 	int start_y;
 };
 
@@ -407,7 +407,6 @@ void load(struct game_t* game) {
 			game->board[i][j] = s;
 		}
 	}
-	//printf("%d", game->board[0][0]);
 	fscanf(f, "%d", &s);
 	game->on_move = s;
 	fscanf(f, "%d", &s);
@@ -434,6 +433,27 @@ void arrows(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 	else if (*key == ARROW_RIGHT) (*pos_x) = (*pos_x + 1 - BOARD_POSITION_X) % (game->size) + BOARD_POSITION_X;
 }
 
+void cursor(struct game_t* game,int* pos_x, int* pos_y) {											//changing background color in cursor position
+	if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == WHITE) {
+		textbackground(LIGHTRED);
+		textcolor(15);
+		cputs("O");
+		textbackground(0);
+	}
+	else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
+		textbackground(LIGHTRED);
+		textcolor(0);
+		cputs("O");
+		textbackground(0);
+		textcolor(15);
+	}
+	else {
+		textbackground(LIGHTRED);
+		cputs(" ");
+		textbackground(0);
+	}
+}
+
 void game_state_editor(struct game_t* game, char* key, int* pos_x, int* pos_y) {
 	clrscr();
 	draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
@@ -448,7 +468,9 @@ void game_state_editor(struct game_t* game, char* key, int* pos_x, int* pos_y) {
 	while (*key != ENTER) {
 		//key = getch();
 		arrows(key, pos_x, pos_y, game);
+		draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 		gotoxy(*pos_x, *pos_y);
+		cursor(game, pos_x, pos_y);
 		if (*key == 'i') {
 			if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
 				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK;
@@ -459,7 +481,6 @@ void game_state_editor(struct game_t* game, char* key, int* pos_x, int* pos_y) {
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 		}
 	}
-
 }
 
 int change_size() {
@@ -512,14 +533,10 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 		arrows(key, pos_x, pos_y, game);
 	}
 	else if (*key == 'i') {
-		//placement(game, pos_x, pos_y);
 
 		if (placement(game, pos_x, pos_y) == 1) {
-			capture(game, *pos_x, *pos_y);               //?????????????????????XDDDDDDDD
+			capture(game, *pos_x, *pos_y);
 		}
-		/*else {
-			//placement(game, *pos_x, *pos_y);                 //???????
-		}*/
 	}
 	else if (*key == 'n') {
 		new_game(game);
@@ -564,7 +581,6 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 void scroll(struct game_t* game, int pos_x, int pos_y) {
 	struct text_info info;
 	gettextinfo(&info);
-	//movetext(1, 1, info.screenwidth, info.screenheight, -BOARD_POSITION_X, -1);
 	if (pos_x > info.screenwidth) game->start_x = pos_x - info.screenwidth;
 	else game->start_x = 0;
 	if (pos_y > info.screenheight) game->start_y = pos_y - info.screenheight;
@@ -581,25 +597,7 @@ void round(struct game_t* game, int* pos_x, int* pos_y, char* key) {
 	else if (*pos_x > info.screenwidth) gotoxy(info.screenwidth, *pos_y);
 	else if (*pos_y > info.screenheight) gotoxy(*pos_x, info.screenheight);
 	else gotoxy(*pos_x, *pos_y);
-
-	if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == WHITE) {                  //changing background color
-		textbackground(LIGHTRED);
-		textcolor(15);
-		cputs("O");
-		textbackground(0);
-	}
-	else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
-		textbackground(LIGHTRED);
-		textcolor(0);
-		cputs("O");
-		textbackground(0);
-		textcolor(15);
-	}
-	else {
-		textbackground(LIGHTRED);
-		cputs(" ");
-		textbackground(0);
-	}
+	cursor(game, pos_x, pos_y);
 
 	*key = getch();
 	move(key, pos_x, pos_y, game);
@@ -643,5 +641,5 @@ int main() {
 	/*for (int i = 0; i < size; i++) {
 		free(board[i]);
 	}*/
-	free(board);
+	free(game.board);
 }
