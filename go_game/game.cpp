@@ -22,6 +22,7 @@
 #define ARROW_RIGHT 0x4d
 #define ENTER 0x0d
 #define ESC 0x1b
+#define BACKSPACE '\b'
 
 struct game_t {
 	int size;
@@ -343,10 +344,19 @@ void save(struct game_t* game) {
 	gotoxy(1, 1);
 	cputs("Write name of the file: ");
 	key = getch();
-	while (key != ENTER) {
-		putch(key);
-		name[i] = key;
-		i++;
+	while (key != ENTER) {	
+		if (key == BACKSPACE && i > 0) {
+			name[i - 1] = 0;
+			gotoxy(wherex() - 1, wherey());
+			cputs(" ");
+			gotoxy(wherex() - 1, wherey());
+			i--;
+		}
+		else {
+			name[i] = key;
+			putch(name[i]);
+			i++;
+		}
 		key = getch();
 	}
 	snprintf(buffer, sizeof(name), "%s.txt", name);
@@ -373,9 +383,18 @@ void load(struct game_t* game) {
 	cputs("Write name of the file: ");
 	key = getch();
 	while (key != ENTER) {
-		putch(key);
-		name[i] = key;
-		i++;
+		if (key == BACKSPACE && i > 0) {
+			name[i - 1] = 0;
+			gotoxy(wherex() - 1, wherey());
+			cputs(" ");
+			gotoxy(wherex() - 1, wherey());
+			i--;
+		}
+		else {
+			name[i] = key;
+			putch(name[i]);
+			i++;
+		}
 		key = getch();
 	}
 	snprintf(buffer, sizeof(name), "%s.txt", name);
