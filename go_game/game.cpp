@@ -4,18 +4,22 @@
 #include<math.h>
 #include<string.h>
 
-#define SIZE 9
-#define BOARD_POSITION_X 50
+#define _CRT_SECURE_NO_WARNINGS
+
+//coordinates
+#define BOARD_POSITION_X 60
 #define BOARD_POSITION_Y 5
 #define MENU_POSITION_X 1
 #define MENU_POSITION_Y 1
 
+//board state
 #define EMPTY 0
-#define WHITE 1
-#define BLACK 2
+#define WHITE_STONE 1
+#define BLACK_STONE 2
 #define KO_WHITE 3
 #define KO_BLACK 4
 
+//keys
 #define ARROW_UP 0x48
 #define ARROW_DOWN 0x50
 #define ARROW_LEFT 0x4b
@@ -27,10 +31,10 @@
 struct game_t {
 	int size;
 	int** board;
-	int** chain;
+	int** chain;			//stores recently found chain 1-stone in chain, 0-empty or not in chain
 	int on_move;
 	int score[3];
-	int start_x;           //if board is too big displaying from start_x,start_y instead of 0,0
+	int start_x;			//if board is too big - displaying from start_x,start_y instead of 0,0
 	int start_y;
 };
 
@@ -57,12 +61,12 @@ void draw_board(struct game_t* game, int pos_x, int pos_y) {
 				else putch(197);
 
 			}
-			else if (game->board[j][i] == WHITE) {
+			else if (game->board[j][i] == WHITE_STONE) {
 				textcolor(15);
 				cputs("O");
 				textcolor(0);
 			}
-			else if (game->board[j][i] == BLACK) {
+			else if (game->board[j][i] == BLACK_STONE) {
 				cputs("O");
 			}
 		}
@@ -72,27 +76,28 @@ void draw_board(struct game_t* game, int pos_x, int pos_y) {
 }
 void draw_menu(struct game_t* game, int pos_x, int pos_y) {
 	gotoxy(MENU_POSITION_X, MENU_POSITION_Y);
-	char tab[10][100] = { "Szymon Liszewski 193477",
+	char tab[11][100] = { "Szymon Liszewski 193477",
 	"arrows: moving the cursor over the board",
 	"q : quit the program",
 	"n : start a new game",
-	"enter : confirm choiceand end player’s turn",
+	"enter : confirm choice and end player's turn",
 	"esc : cancel current action",
 	"i : place a stone on the board",
 	"s : save the game state",
 	"l : load the game state",
-	"f : finish the game."
+	"f : finish the game",
+	"implemented functionalities: a,b,c,d,e,f,g,h,i,j,k"
 
 	};
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 11; i++) {
 		gotoxy(MENU_POSITION_X, MENU_POSITION_Y + i);
 		cputs(tab[i]);
 	}
 	char buffer[100], buffer2[100];
-	snprintf(buffer, 100, "white: %d black: %d", game->score[WHITE], game->score[BLACK]);
-	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 10);
+	snprintf(buffer, 100, "white: %d black: %d", game->score[WHITE_STONE], game->score[BLACK_STONE]);
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 12);
 	cputs(buffer);
-	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 11);
+	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 13);
 	snprintf(buffer2, 100, "current position: %d %d ", pos_x - BOARD_POSITION_X, pos_y - BOARD_POSITION_Y);
 	cputs(buffer2);
 }
@@ -103,13 +108,13 @@ void new_game(struct game_t* game) {
 			game->board[i][j] = EMPTY;
 		}
 	}
-	game->on_move = BLACK;
-	game->score[WHITE] = 0;
-	game->score[BLACK] = 0;
+	game->on_move = BLACK_STONE;
+	game->score[WHITE_STONE] = 0;
+	game->score[BLACK_STONE] = 0;
 }
-void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {
-	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
-	if (game->board[x][y] != EMPTY && game->board[x][y] == color) {
+void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {     //stones which belong to found chain are marked as '1' in game.chain
+	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;			//pos_x and pos_y are first stones of chain
+	if (game->board[x][y] != EMPTY && game->board[x][y] == color) {			//color - color of chain
 		game->chain[x][y] = 1;
 		if (x < game->size - 1 && game->board[x + 1][y] == color) {
 			if (game->chain[x + 1][y] == 0) {
@@ -137,7 +142,7 @@ void find_chain(struct game_t* game, int pos_x, int pos_y, int color) {
 		}
 	}
 }
-int liberties_new(struct game_t* game, int pos_x, int pos_y) {
+int liberties_new(struct game_t* game, int pos_x, int pos_y) {         //function return number of liberties (stones of the same color doesn't count as liberties)
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y;
 	int liberties = 0;
 	if ((x != game->size - 1) && (game->board[x + 1][y] == EMPTY || game->board[x + 1][y] == KO_BLACK || game->board[x + 1][y] == KO_WHITE)) {
@@ -166,8 +171,8 @@ int chain_liberties(struct game_t* game) {
 	return liberties;
 }
 
-void check_captures(struct game_t* game, int pos_x, int pos_y) {
-	int chain_size = 0;
+void check_captures(struct game_t* game, int pos_x, int pos_y) {        //removin chain from board if chain liberties are 0
+	int chain_size = 0;													//if there is only one stone in chain applying ko rule
 	for (int i = 0; i < game->size; i++) {
 		for (int j = 0; j < game->size; j++) {
 			if (game->chain[j][i] != EMPTY) chain_size++;
@@ -177,15 +182,15 @@ void check_captures(struct game_t* game, int pos_x, int pos_y) {
 		for (int i = 0; i < game->size; i++) {
 			for (int j = 0; j < game->size; j++) {
 				if (game->chain[j][i] == 1) {
-					if (game->on_move == WHITE) {
+					if (game->on_move == WHITE_STONE) {
 						if (chain_size == 1) game->board[j][i] = KO_BLACK;
 						else game->board[j][i] = EMPTY;
-						game->score[WHITE] += 1;
+						game->score[WHITE_STONE] += 1;
 					}
-					else if (game->on_move == BLACK) {
+					else if (game->on_move == BLACK_STONE) {
 						if (chain_size == 1) game->board[j][i] = KO_WHITE;
 						else game->board[j][i] = EMPTY;
-						game->score[BLACK] += 1;
+						game->score[BLACK_STONE] += 1;
 					}
 					game->chain[j][i] = EMPTY;
 				}
@@ -198,12 +203,12 @@ void check_captures(struct game_t* game, int pos_x, int pos_y) {
 		}
 	}
 }
-void capture(struct game_t* game, int pos_x, int pos_y) {
+void capture(struct game_t* game, int pos_x, int pos_y) {					//checking if there is posibility of capturing on squares next to recently placed stone
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color;
-	if (game->board[x][y] == WHITE) color = BLACK;
-	else if (game->board[x][y] == BLACK) color = WHITE;
+	if (game->board[x][y] == WHITE_STONE) color = BLACK_STONE;
+	else if (game->board[x][y] == BLACK_STONE) color = WHITE_STONE;
 	else color = EMPTY;
-	if (x < game->size - 1) {                                       //przeniesc ify do find_chain
+	if (x < game->size - 1) {
 		find_chain(game, pos_x + 1, pos_y, color);
 		check_captures(game, pos_x, pos_y);
 	}
@@ -225,7 +230,7 @@ void capture(struct game_t* game, int pos_x, int pos_y) {
 int can_place(struct game_t* game, int pos_x, int pos_y) {             //checking if the stone can be placed (need at least one liberty after placement, checking for ko first, then checking for captures)
 	int x = pos_x - BOARD_POSITION_X, y = pos_y - BOARD_POSITION_Y, color = game->board[x][y];
 	int lib = 0;
-	if ((game->on_move == WHITE && game->board[x][y] == KO_WHITE) || (game->on_move == BLACK && game->board[x][y] == KO_BLACK)) {
+	if ((game->on_move == WHITE_STONE && game->board[x][y] == KO_WHITE) || (game->on_move == BLACK_STONE && game->board[x][y] == KO_BLACK)) {
 		return 0;
 	}
 	game->board[x][y] = game->on_move;
@@ -242,7 +247,7 @@ int can_place(struct game_t* game, int pos_x, int pos_y) {             //checkin
 }
 
 void change_ko(struct game_t* game) {
-	if (game->on_move == WHITE) {
+	if (game->on_move == WHITE_STONE) {
 		for (int i = 0; i < game->size; i++) {
 			for (int j = 0; j < game->size; j++) {
 				if (game->board[i][j] == KO_WHITE) {
@@ -251,7 +256,7 @@ void change_ko(struct game_t* game) {
 			}
 		}
 	}
-	else if (game->on_move == BLACK) {
+	else if (game->on_move == BLACK_STONE) {
 		for (int i = 0; i < game->size; i++) {
 			for (int j = 0; j < game->size; j++) {
 				if (game->board[i][j] == KO_BLACK) {
@@ -262,7 +267,7 @@ void change_ko(struct game_t* game) {
 	}
 }
 
-int placement(struct game_t* game, int* pos_x, int* pos_y) {
+int placement(struct game_t* game, int* pos_x, int* pos_y) {			//place stone; return 1 when stone is placed, 0 when can't place stone
 	int* ptr, ** previous_board;
 	previous_board = (int**)malloc(sizeof(int*) * game->size + sizeof(int) * game->size * game->size);
 
@@ -276,34 +281,34 @@ int placement(struct game_t* game, int* pos_x, int* pos_y) {
 			previous_board[i][j] = game->board[i][j];
 		}
 	}
-	int previous_score[3] = { 0,game->score[WHITE],game->score[BLACK] };
+	int previous_score[3] = { 0,game->score[WHITE_STONE],game->score[BLACK_STONE] };
 	if (can_place(game, *pos_x, *pos_y) != 0) {
-		if (game->on_move == WHITE && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
-			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = WHITE;
+		if (game->on_move == WHITE_STONE && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
+			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = WHITE_STONE;
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 			int key = getch();
 			while (key != ESC && key != ENTER) {
 				key = getch();
 			}
-			if (key == ESC) {
+			if (key == ESC) {										//returning to previous state if key = ESC
 				for (int i = 0; i < game->size; i++) {
 					for (int j = 0; j < game->size; j++) {
 						game->board[i][j] = previous_board[i][j];
 					}
 				}
-				game->score[WHITE] = previous_score[WHITE];
+				game->score[WHITE_STONE] = previous_score[WHITE_STONE];
 				draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 				return 0;
 			}
-			if (key == ENTER) {
+			if (key == ENTER) {                                   //confirm move
 				change_ko(game);
-				game->on_move = BLACK;
+				game->on_move = BLACK_STONE;
 				return 1;
 			}
 		}
 
-		else if (game->on_move == BLACK && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
-			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK;
+		else if (game->on_move == BLACK_STONE && game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
+			game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK_STONE;
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 			int key = getch();
 			while (key != ENTER && key != ESC) {
@@ -311,7 +316,7 @@ int placement(struct game_t* game, int* pos_x, int* pos_y) {
 			}
 			if (key == ENTER) {
 				change_ko(game);
-				game->on_move = WHITE;
+				game->on_move = WHITE_STONE;
 				return 1;
 			}
 			else if (key == ESC) {
@@ -320,7 +325,7 @@ int placement(struct game_t* game, int* pos_x, int* pos_y) {
 						game->board[i][j] = previous_board[i][j];
 					}
 				}
-				game->score[BLACK] = previous_score[BLACK];
+				game->score[BLACK_STONE] = previous_score[BLACK_STONE];
 				draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 				free(previous_board);
 				return 0;
@@ -368,8 +373,8 @@ void save(struct game_t* game) {
 		}
 	}
 	fprintf(f, "%d ", game->on_move);
-	fprintf(f, "%d ", game->score[WHITE]);
-	fprintf(f, "%d ", game->score[BLACK]);
+	fprintf(f, "%d ", game->score[WHITE_STONE]);
+	fprintf(f, "%d ", game->score[BLACK_STONE]);
 	fclose(f);
 }
 
@@ -429,9 +434,9 @@ void load(struct game_t* game) {
 	fscanf(f, "%d", &s);
 	game->on_move = s;
 	fscanf(f, "%d", &s);
-	game->score[WHITE] = s;
+	game->score[WHITE_STONE] = s;
 	fscanf(f, "%d", &s);
-	game->score[BLACK] = s;
+	game->score[BLACK_STONE] = s;
 	fclose(f);
 }
 void arrows(char* key, int* pos_x, int* pos_y, struct game_t* game) {
@@ -453,13 +458,13 @@ void arrows(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 }
 
 void cursor(struct game_t* game,int* pos_x, int* pos_y) {											//changing background color in cursor position
-	if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == WHITE) {
+	if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == WHITE_STONE) {
 		textbackground(LIGHTRED);
 		textcolor(15);
 		cputs("O");
 		textbackground(0);
 	}
-	else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
+	else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK_STONE) {
 		textbackground(LIGHTRED);
 		textcolor(0);
 		cputs("O");
@@ -483,18 +488,16 @@ void game_state_editor(struct game_t* game, char* key, int* pos_x, int* pos_y) {
 	gotoxy(MENU_POSITION_X, MENU_POSITION_Y + 2);
 	cputs("enter: confirm and start game");
 	gotoxy(*pos_x, *pos_y);
-	//key = getch();
 	while (*key != ENTER) {
-		//key = getch();
 		arrows(key, pos_x, pos_y, game);
 		draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
 		gotoxy(*pos_x, *pos_y);
 		cursor(game, pos_x, pos_y);
 		if (*key == 'i') {
 			if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == EMPTY) {
-				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK;
+				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = BLACK_STONE;
 			}
-			else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK) {
+			else if (game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] == BLACK_STONE) {
 				game->board[*pos_x - BOARD_POSITION_X][*pos_y - BOARD_POSITION_Y] = EMPTY;
 			}
 			draw_board(game, BOARD_POSITION_X, BOARD_POSITION_Y);
@@ -538,14 +541,21 @@ int change_size() {
 		}
 		for (int j = 0; j < i; j++) {
 			size += ((int)s[i - j - 1] - 48) * pow(10, (double)j);
-		}/*
-		if (BOARD_POSITION_Y + size > info.screenheight || BOARD_POSITION_X + size > info.screenwidth) {
-			return change_size();
-		}*/
+		}
 	}
 	return size;
 }
 
+void finish(struct game_t* game, char* key) {
+	clrscr();
+	gotoxy(1, 1);
+	char buffer[100];
+	snprintf(buffer, 100, "white: %d black: %d", game->score[WHITE_STONE], game->score[BLACK_STONE]);
+	cputs(buffer);
+	while (*key != 'n' && *key != 'q') {
+		*key = getchar();
+	}
+}
 
 void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 	if (*key == 0) {
@@ -594,6 +604,9 @@ void move(char* key, int* pos_x, int* pos_y, struct game_t* game) {
 			}
 		}
 		if (start_game == 0) game_state_editor(game, key, pos_x, pos_y);
+	}
+	else if (*key == 'f') {
+		finish(game, key);
 	}
 }
 
@@ -652,13 +665,10 @@ int main() {
 			chain[i][j] = 0;
 		}
 	}
-	struct game_t game = { size, board, chain, BLACK, {0,0}, 0,0 };
+	struct game_t game = { size, board, chain, BLACK_STONE, {0,0}, 0,0 };
 	do {
 		round(&game, &pos_x, &pos_y, &key);
 	} while (key != 'q');
 
-	/*for (int i = 0; i < size; i++) {
-		free(board[i]);
-	}*/
 	free(game.board);
 }
