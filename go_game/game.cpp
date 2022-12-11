@@ -1,10 +1,9 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
 #include"conio2.h"
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
-
-#define _CRT_SECURE_NO_WARNINGS
 
 //coordinates
 #define BOARD_POSITION_X 60
