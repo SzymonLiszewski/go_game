@@ -640,7 +640,7 @@ int main() {
 #ifndef __cplusplus
 	Conio2_Init();
 #endif
-	settitle("First name, Last Name, Student number");
+	settitle("GO");
 	_setcursortype(_NOCURSOR);
 
 	int size = change_size();
